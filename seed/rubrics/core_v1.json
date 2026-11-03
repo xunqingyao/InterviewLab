@@ -1,0 +1,194 @@
+[
+  {
+    "template_key": "rubric_idempotency_v1",
+    "version": "v1",
+    "skill_ids": ["backend.idempotency"],
+    "criteria_json": {
+      "goal": "能否用幂等键和唯一约束防止重复提交写成两条答案",
+      "levels": {
+        "0": "认为重试就会再写一条，或把幂等完全交给前端防抖",
+        "1": "提到重试，但说不清同一把钥匙同一正文应返回第一次结果",
+        "2": "能说明 Idempotency-Key + 每 turn 一条 ANSWER 的唯一约束",
+        "3": "区分相同钥匙相同正文、相同钥匙不同正文（409）和换钥匙撞唯一索引"
+      },
+      "acceptable_alternatives": ["用请求哈希当幂等键，但需说明冲突与过期"],
+      "pitfalls": ["只说加锁", "把幂等和 fencing 混为一谈"]
+    }
+  },
+  {
+    "template_key": "rubric_jobs_v1",
+    "version": "v1",
+    "skill_ids": ["backend.jobs"],
+    "criteria_json": {
+      "goal": "能否区分 SKIP LOCKED、租约和 fencing 各自解决的问题",
+      "levels": {
+        "0": "把三件事说成同一个锁",
+        "1": "能解释抢任务，但说不清租约过期后旧 Worker 回来会怎样",
+        "2": "SKIP LOCKED 防并发抢同一行，租约防 Worker 死亡，fencing 防旧租约写回",
+        "3": "能举出「模型已返回、事务未提交、租约被回收」的时序并说明 epoch 校验"
+      },
+      "acceptable_alternatives": ["用队列中间件代替表队列，但需说明至少等价的 fencing"],
+      "pitfalls": ["认为心跳可以替代 fencing"]
+    }
+  },
+  {
+    "template_key": "rubric_rag_eval_v1",
+    "version": "v1",
+    "skill_ids": ["rag.evaluation_design"],
+    "criteria_json": {
+      "goal": "能否设计可比较的检索评测，而不是凭感觉说变好了",
+      "levels": {
+        "0": "只说优化了效果，没有测试集或对照",
+        "1": "提到准确率，但生成模型和问题集同时在变",
+        "2": "固定测试集、基线和生成配置后再比较检索",
+        "3": "说明失败案例、延迟代价，以及哪类题检索帮不上忙"
+      },
+      "acceptable_alternatives": ["小样本人工对照，需说明偏差和何时升级到固定集"],
+      "pitfalls": ["用聊天体验代替评测", "把生成模型升级算进检索收益"]
+    }
+  },
+  {
+    "template_key": "rubric_agent_state_v1",
+    "version": "v1",
+    "skill_ids": ["ai.agent_state"],
+    "criteria_json": {
+      "goal": "能否把业务状态和 Agent checkpoint 分开",
+      "levels": {
+        "0": "用一棵一直挂起的大图等待用户回答",
+        "1": "知道要存状态，但把面试答案写进图 checkpoint",
+        "2": "用户可等待的状态进数据库，图只覆盖一次模型调用",
+        "3": "说明崩溃后如何从 jobs 租约恢复，而不是重放整场聊天"
+      },
+      "acceptable_alternatives": ["短会话可以同步调用模型，但需说明超时与重试"],
+      "pitfalls": ["把 LangGraph 状态当成面试真相"]
+    }
+  },
+  {
+    "template_key": "rubric_tools_v1",
+    "version": "v1",
+    "skill_ids": ["ai.tool_boundaries"],
+    "criteria_json": {
+      "goal": "Agent 只出提案，领域层校验不变量",
+      "levels": {
+        "0": "让模型直接写库或改 system prompt",
+        "1": "有工具白名单，但没说谁负责拒绝非法提案",
+        "2": "提案经 schema/语义校验后由 commands 写入",
+        "3": "能举出 prompt injection 不能扩大工具权限的具体拦法"
+      },
+      "acceptable_alternatives": ["少量只读工具由服务端注入 owner_id"],
+      "pitfalls": ["把简历里的指令当系统规则"]
+    }
+  },
+  {
+    "template_key": "rubric_events_v1",
+    "version": "v1",
+    "skill_ids": ["backend.events"],
+    "criteria_json": {
+      "goal": "断线后能按序号补读，且不重复展示同一道正式题",
+      "levels": {
+        "0": "刷新就从头重放全部聊天",
+        "1": "知道用 cursor，但补读和当前题状态可能打架",
+        "2": "seq > cursor 补读；题目以 turn 的 READY 为准",
+        "3": "区分 state_version 与 event_seq，评估完成不让提交失败"
+      },
+      "acceptable_alternatives": ["短轮询快照，但需处理丢失的 question.ready"],
+      "pitfalls": ["用数组下标当事件 id"]
+    }
+  },
+  {
+    "template_key": "rubric_citation_v1",
+    "version": "v1",
+    "skill_ids": ["eval.citation"],
+    "criteria_json": {
+      "goal": "引用必须在冻住的答案里唯一命中，不能用最像的片段",
+      "levels": {
+        "0": " paraphrasing 后仍当原文引用",
+        "1": "会截一句，但不检查出现次数",
+        "2": "规范化后唯一命中才补齐偏移，多处命中作废",
+        "3": "区分「文字存在」和「这段文字支持结论」"
+      },
+      "acceptable_alternatives": ["模型只返回 quote，偏移由后端定位"],
+      "pitfalls": ["模糊匹配", "引用题目当证据"]
+    }
+  },
+  {
+    "template_key": "rubric_tx_v1",
+    "version": "v1",
+    "skill_ids": ["backend.transactions"],
+    "criteria_json": {
+      "goal": "提交答案的事务只做短写入，模型调用在事务外",
+      "levels": {
+        "0": "在同一请求里同步等模型 10 秒再提交",
+        "1": "知道要快，但仍把出题放进提交事务",
+        "2": "事务写入答案、改 turn、入队 jobs；出题打分走 Worker",
+        "3": "说明题目与 rubric snapshot 必须同事务，避免看答案改标准"
+      },
+      "acceptable_alternatives": ["outbox 表延迟发事件，等价于同事务入队"],
+      "pitfalls": ["长事务持有行锁等 LLM"]
+    }
+  },
+  {
+    "template_key": "rubric_privacy_v1",
+    "version": "v1",
+    "skill_ids": ["security.privacy"],
+    "criteria_json": {
+      "goal": "联系方式不进入 Agent 上下文、日志和对外报告",
+      "levels": {
+        "0": "把完整简历原文直接塞进 prompt",
+        "1": "知道要脱敏，但日志仍打邮箱",
+        "2": "Agent 只看到去电话/邮箱后的简历；报告不回显联系方式",
+        "3": "区分存储（可恢复）与展示/模型输入（必须红acted）"
+      },
+      "acceptable_alternatives": ["用户明确同意后用于账号绑定，仍不进面试官上下文"],
+      "pitfalls": ["用正则漏掉国际号码就当没问题"]
+    }
+  },
+  {
+    "template_key": "rubric_multi_agent_v1",
+    "version": "v1",
+    "skill_ids": ["ai.multi_agent"],
+    "criteria_json": {
+      "goal": "能说明何时拆 Interviewer/Evaluator，何时退回单 Agent",
+      "levels": {
+        "0": "为了多 Agent 而多 Agent",
+        "1": "只说拆开更专业，给不出失败模式",
+        "2": "面试官取证、评分官独立上下文，避免自己出题自己打分",
+        "3": "若评测显示单 Agent 引用率和一致性不差，应能说退回条件"
+      },
+      "acceptable_alternatives": ["先固定工作流，数字不够再拆角色"],
+      "pitfalls": ["把三个 prompt 叫成三个产品"]
+    }
+  },
+  {
+    "template_key": "rubric_failure_v1",
+    "version": "v1",
+    "skill_ids": ["backend.failure"],
+    "criteria_json": {
+      "goal": "技术失败不能变成 0 分，部分报告要解释缺了什么",
+      "levels": {
+        "0": "模型超时就打 0 分",
+        "1": "知道不该打 0，但界面仍显示失败=不会",
+        "2": "评估失败保持未评分/证据不足，与答错区分",
+        "3": "部分完成报告标明哪些 turn 未评估及原因"
+      },
+      "acceptable_alternatives": ["重试耗尽后人工复核，而不是静默 0 分"],
+      "pitfalls": ["把 INVALID_OUTPUT 当成候选人零分"]
+    }
+  },
+  {
+    "template_key": "rubric_cutoff_v1",
+    "version": "v1",
+    "skill_ids": ["ai.context"],
+    "criteria_json": {
+      "goal": "生成下一问时冻结输入，迟到评估不能插入已开始的生成",
+      "levels": {
+        "0": "下一问随时读最新分数，生成中途改输入",
+        "1": "知道要快照，但迟到评估仍会改正在跑的 job",
+        "2": "job 带着 input snapshot；迟到结果只影响之后的任务",
+        "3": "能说明 cutoff turn 与报告宽限如何避免边评边改题"
+      },
+      "acceptable_alternatives": ["Interviewer 不依赖本轮完整评分也能工作"],
+      "pitfalls": ["共享可变 transcript 给所有 Agent"]
+    }
+  }
+]

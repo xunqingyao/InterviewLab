@@ -1,0 +1,16 @@
+{
+  "template_key": "rubric_project_intro_v1",
+  "version": "v1",
+  "skill_ids": ["project.decision"],
+  "criteria_json": {
+    "goal": "能否讲清设计决策、约束、替代方案和亲历范围",
+    "levels": {
+      "0": "关键事实错误，或把他人工作说成自己主导",
+      "1": "能复述项目，但缺少约束、取舍或个人边界",
+      "2": "在给定约束下给出可实施的设计与职责划分",
+      "3": "解释取舍、失败边界和如何验证"
+    },
+    "acceptable_alternatives": ["用原型验证替代正式实验，但需说明局限"],
+    "pitfalls": ["空泛说优化了效果", "不区分接触过与主导"]
+  }
+}

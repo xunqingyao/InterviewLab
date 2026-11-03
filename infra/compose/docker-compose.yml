@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: interviewlab-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - interviewlab_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/compose/Dockerfile
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    env_file:
+      - ../../.env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:?Set DOCKER_DATABASE_URL in .env}
+      FILE_ROOT: /var/lib/interviewlab/files
+      INLINE_WORKER: "0"
+    ports:
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
+    volumes:
+      - interviewlab_files:/var/lib/interviewlab/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: infra/compose/Dockerfile
+    command: python -m worker.main
+    env_file:
+      - ../../.env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:?Set DOCKER_DATABASE_URL in .env}
+      FILE_ROOT: /var/lib/interviewlab/files
+      INLINE_WORKER: "0"
+      WORKER_ID: worker-1
+    volumes:
+      - interviewlab_files:/var/lib/interviewlab/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  interviewlab_pg:
+  interviewlab_files:
